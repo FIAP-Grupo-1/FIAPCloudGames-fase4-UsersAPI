@@ -1,0 +1,47 @@
+# Infraestrutura local para desenvolvimento da UsersAPI.
+# Sobe PostgreSQL; a API roda localmente com `dotnet run` (ambiente Development ->
+# aponta para localhost). O UserRegisteredEvent é publicado via SNS (ver
+# appsettings.Development.json / SnsIntegrationEventPublisher) — não depende mais de
+# um broker local. Para testar a publicação real seria necessário credenciais AWS
+# válidas ou LocalStack (mesma abordagem usada em tests/FCG.IntegrationTests).
+#
+# Obs.: a API ainda não é construída aqui porque, na opção A, ela referencia o
+# projeto de contratos (FiapCloudGames.Contracts) fora deste repositório, fora do
+# contexto do `docker build`. Quando o pacote estiver no nuget.org e trocarmos para
+# PackageReference, basta adicionar o serviço "api" usando o Dockerfile existente.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fcgdb
+      POSTGRES_USER: fcg
+      POSTGRES_PASSWORD: fcg123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fcg -d fcgdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    container_name: userredis
+    command: >
+      redis-server
+      --user default off
+      --user user on ">pass" "~*" "&*" "+@all"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--user", "catalog", "--pass", "pass", "--no-auth-warning", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redis_data:
