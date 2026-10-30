@@ -15,6 +15,7 @@ jogos **não** pertence a este serviço — ele é responsabilidade do `CatalogA
 
 - .NET 10 — Minimal APIs
 - Entity Framework Core + PostgreSQL (Npgsql) com migrations
+- Redis (`StackExchange.Redis`) como cache das consultas de usuários
 - JWT (`Microsoft.AspNetCore.Authentication.JwtBearer`)
 - BCrypt para hash de senha
 - AWS SNS (`AWSSDK.SimpleNotificationService`) para eventos de integração
@@ -40,6 +41,7 @@ tests/
 | Variável | Descrição | Exemplo |
 |---|---|---|
 | `ConnectionStrings__DefaultConnection` | String de conexão do PostgreSQL | `Host=db;Port=5432;Database=fcgdb;Username=fcg;Password=fcg123` |
+| `ConnectionStrings__Redis` | String de conexão do Redis (cache) | `localhost:6379,user=user,password=pass,abortConnect=false` |
 | `JwtSettings__SecretKey` | Chave secreta para assinar os tokens JWT | *(string com ≥ 32 caracteres)* |
 | `JwtSettings__ExpirationHours` | Validade do token, em horas | `4` |
 | `ASPNETCORE_ENVIRONMENT` | Ambiente (`Development` habilita o Swagger) | `Development` |
@@ -48,10 +50,10 @@ tests/
 
 ## Executando localmente
 
-Suba o PostgreSQL via Docker e rode a API localmente:
+Suba o PostgreSQL e o Redis via Docker e rode a API localmente:
 
 ```bash
-docker compose up -d          # PostgreSQL
+docker compose up -d          # PostgreSQL + Redis
 dotnet run --project src/FCG.API
 ```
 
@@ -87,8 +89,24 @@ Swagger: `https://localhost:<porta>/swagger` (ambiente Development).
 
 ```bash
 dotnet test tests/FCG.UnitTests          # unitários (rápidos, sem dependências)
-dotnet test tests/FCG.IntegrationTests   # integração (requer Docker p/ Testcontainers)
+dotnet test tests/FCG.IntegrationTests   # integração (requer Docker p/ Testcontainers + Redis)
 ```
+
+Os testes de integração sobem PostgreSQL e LocalStack (SNS/SQS) sozinhos via
+Testcontainers, mas o Redis não: ele precisa estar rodando (o do `docker compose up -d`
+atende, com a connection string do `appsettings.json`).
+
+Se o Testcontainers falhar com `unauthorized: incorrect username or password` ao baixar
+imagens, há uma credencial expirada do Docker Hub em `~/.docker/config.json`; rode
+`docker logout` (imagens públicas não exigem login).
+
+### CI
+
+O workflow `.github/workflows/test.yml` roda em todo pull request:
+
+- **test**: build + testes unitários e de integração (Redis como service container);
+- **container-test**: build da imagem Docker e smoke test (sobe PostgreSQL, Redis e a
+  API, e valida o login do admin seed).
 
 ## Eventos de integração (SNS)
 
