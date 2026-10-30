@@ -8,6 +8,11 @@ namespace FCG.Application.Users.UseCases;
 
 public class ListUsersUseCase(IUserRepository userRepository, ICacheService cacheService) : IListUsersUseCase
 {
+    public ListUsersUseCase(IUserRepository userRepository)
+        : this(userRepository, NullCacheService.Instance)
+    {
+    }
+
     public async Task<PagedUsersResponse> ExecuteAsync(
         int page,
         int pageSize,

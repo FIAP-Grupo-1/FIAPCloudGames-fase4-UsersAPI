@@ -9,6 +9,11 @@ namespace FCG.Application.Users.UseCases;
 
 public class GetUserDetailUseCase(IUserRepository userRepository, ICacheService cacheService) : IGetUserDetailUseCase
 {
+    public GetUserDetailUseCase(IUserRepository userRepository)
+        : this(userRepository, NullCacheService.Instance)
+    {
+    }
+
     public async Task<UserDetailResponse> ExecuteAsync(
         Guid userId,
         CancellationToken cancellationToken = default)

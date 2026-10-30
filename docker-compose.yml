@@ -1,5 +1,5 @@
 # Infraestrutura local para desenvolvimento da UsersAPI.
-# Sobe PostgreSQL; a API roda localmente com `dotnet run` (ambiente Development ->
+# Sobe PostgreSQL e Redis (cache); a API roda localmente com `dotnet run` (ambiente Development ->
 # aponta para localhost). O UserRegisteredEvent é publicado via SNS (ver
 # appsettings.Development.json / SnsIntegrationEventPublisher) — não depende mais de
 # um broker local. Para testar a publicação real seria necessário credenciais AWS
@@ -37,7 +37,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--user", "catalog", "--pass", "pass", "--no-auth-warning", "ping"]
+      test: ["CMD", "redis-cli", "--user", "user", "--pass", "pass", "--no-auth-warning", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
