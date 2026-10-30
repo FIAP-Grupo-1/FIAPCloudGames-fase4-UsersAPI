@@ -9,6 +9,11 @@ namespace FCG.Application.Users.UseCases;
 
 public class AdminUpdateUserUseCase(IUserUnitOfWork unitOfWork, ICacheService cacheService) : IAdminUpdateUserUseCase
 {
+    public AdminUpdateUserUseCase(IUserUnitOfWork unitOfWork)
+        : this(unitOfWork, NullCacheService.Instance)
+    {
+    }
+
     public async Task<AdminUpdateUserResponse> ExecuteAsync(
         Guid userId,
         AdminUpdateUserRequest request,

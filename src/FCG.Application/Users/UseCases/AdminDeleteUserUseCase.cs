@@ -8,6 +8,11 @@ namespace FCG.Application.Users.UseCases;
 
 public class AdminDeleteUserUseCase(IUserUnitOfWork unitOfWork, ICacheService cacheService) : IAdminDeleteUserUseCase
 {
+    public AdminDeleteUserUseCase(IUserUnitOfWork unitOfWork)
+        : this(unitOfWork, NullCacheService.Instance)
+    {
+    }
+
     public async Task ExecuteAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var cacheKey = $"user:{userId}";
