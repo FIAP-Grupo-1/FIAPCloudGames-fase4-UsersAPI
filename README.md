@@ -33,7 +33,7 @@ src/
   FCG.API             # Endpoints, middleware, composição
 tests/
   FCG.UnitTests        # xUnit + Shouldly + NSubstitute
-  FCG.IntegrationTests # xUnit + Shouldly + Testcontainers (PostgreSQL + LocalStack/SNS/SQS)
+  FCG.IntegrationTests # xUnit + Shouldly + Testcontainers (PostgreSQL + Redis + LocalStack/SNS/SQS)
 ```
 
 ## Variáveis de ambiente
@@ -89,12 +89,13 @@ Swagger: `https://localhost:<porta>/swagger` (ambiente Development).
 
 ```bash
 dotnet test tests/FCG.UnitTests          # unitários (rápidos, sem dependências)
-dotnet test tests/FCG.IntegrationTests   # integração (requer Docker p/ Testcontainers + Redis)
+dotnet test tests/FCG.IntegrationTests   # integração (requer Docker p/ Testcontainers)
 ```
 
-Os testes de integração sobem PostgreSQL e LocalStack (SNS/SQS) sozinhos via
-Testcontainers, mas o Redis não: ele precisa estar rodando (o do `docker compose up -d`
-atende, com a connection string do `appsettings.json`).
+Os testes de integração sobem PostgreSQL, Redis e LocalStack (SNS/SQS) sozinhos via
+Testcontainers; não é preciso ter nenhum deles rodando localmente. Antes de cada teste,
+o `UsersApiFactory.ResetAsync()` deixa o banco só com o admin do seed e esvazia o Redis
+e a fila SQS, então todo teste começa do mesmo estado.
 
 Se o Testcontainers falhar com `unauthorized: incorrect username or password` ao baixar
 imagens, há uma credencial expirada do Docker Hub em `~/.docker/config.json`; rode
@@ -104,7 +105,7 @@ imagens, há uma credencial expirada do Docker Hub em `~/.docker/config.json`; r
 
 O workflow `.github/workflows/test.yml` roda em todo pull request:
 
-- **test**: build + testes unitários e de integração (Redis como service container);
+- **test**: build + testes unitários e de integração (dependências via Testcontainers);
 - **container-test**: build da imagem Docker e smoke test (sobe PostgreSQL, Redis e a
   API, e valida o login do admin seed).
 

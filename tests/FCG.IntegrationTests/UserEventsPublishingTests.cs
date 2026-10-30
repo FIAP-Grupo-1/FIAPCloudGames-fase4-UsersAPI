@@ -16,8 +16,12 @@ namespace FCG.IntegrationTests;
 /// SNS quando os endpoints de usuário são chamados. Uma fila SQS já inscrita no tópico
 /// (ver UsersApiFactory) recebe a mensagem e o teste valida o conteúdo.
 /// </summary>
-public class UserEventsPublishingTests(UsersApiFactory factory) : IClassFixture<UsersApiFactory>
+public class UserEventsPublishingTests(UsersApiFactory factory) : IClassFixture<UsersApiFactory>, IAsyncLifetime
 {
+    // Cada teste começa com o banco só com o admin do seed e o Redis e a fila SQS vazios.
+    public Task InitializeAsync() => factory.ResetAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
+
     private const string SeededAdminEmail = "admin@fcg.com";
     private const string SeededAdminPassword = "Admin@123";
 

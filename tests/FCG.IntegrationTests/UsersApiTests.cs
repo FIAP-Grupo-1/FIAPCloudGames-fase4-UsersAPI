@@ -10,8 +10,12 @@ using Shouldly;
 
 namespace FCG.IntegrationTests;
 
-public class UsersApiTests(UsersApiFactory factory) : IClassFixture<UsersApiFactory>
+public class UsersApiTests(UsersApiFactory factory) : IClassFixture<UsersApiFactory>, IAsyncLifetime
 {
+    // Cada teste começa com o banco só com o admin do seed e o Redis vazio.
+    public Task InitializeAsync() => _factory.ResetAsync();
+    public Task DisposeAsync() => Task.CompletedTask;
+
     private const string SeededAdminEmail = "admin@fcg.com";
     private const string SeededAdminPassword = "Admin@123";
 
