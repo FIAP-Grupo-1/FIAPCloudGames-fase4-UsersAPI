@@ -109,6 +109,32 @@ O workflow `.github/workflows/test.yml` roda em todo pull request:
 - **container-test**: build da imagem Docker e smoke test (sobe PostgreSQL, Redis e a
   API, e valida o login do admin seed).
 
+### Segurança
+
+O workflow `.github/workflows/security.yml` roda em todo pull request, em push na `main`,
+toda segunda-feira (CVEs novas aparecem sem mudança no código) e manualmente pela aba
+Actions. Ele funciona em **modo relatório**: mostra o que encontrou no resumo da execução
+(Summary) e como avisos no PR, mas **nunca falha nem bloqueia o merge**.
+
+- **dependencies**: pacotes NuGet vulneráveis, inclusive transitivos (`dotnet list package --vulnerable`);
+- **image**: pacotes do sistema e do .NET na imagem Docker, MEDIUM ou maior com correção disponível (Trivy);
+- **secrets**: chaves, tokens e senhas em todo o histórico do git (Gitleaks);
+- **codeql**: falhas de segurança no código C#, com alertas na aba **Security** (CodeQL).
+
+O `.github/dependabot.yml` abre PRs semanais atualizando pacotes NuGet, a imagem base do
+Dockerfile e as GitHub Actions.
+
+Para rodar os mesmos scans localmente (só precisa de Docker):
+
+```bash
+dotnet list package --vulnerable --include-transitive
+
+docker build --pull -f src/FCG.API/Dockerfile -t users-api:scan .
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image --severity MEDIUM,HIGH,CRITICAL --ignore-unfixed users-api:scan
+
+docker run --rm -v "$PWD:/repo:ro" zricethezav/gitleaks:v8.30.1 git /repo --redact
+```
+
 ## Eventos de integração (SNS)
 
 No cadastro de usuário a API publica o evento em um tópico SNS, usando
