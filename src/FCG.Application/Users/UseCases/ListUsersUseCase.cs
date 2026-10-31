@@ -47,6 +47,6 @@ public class ListUsersUseCase(IUserRepository userRepository, ICacheService cach
 
         return pagedUsersResponse!;
 
-        
+
     }
 }

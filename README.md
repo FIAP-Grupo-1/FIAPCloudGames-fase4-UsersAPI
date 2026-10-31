@@ -109,6 +109,16 @@ O workflow `.github/workflows/test.yml` roda em todo pull request:
 - **container-test**: build da imagem Docker e smoke test (sobe PostgreSQL, Redis e a
   API, e valida o login do admin seed).
 
+### Lint
+
+O workflow `.github/workflows/lint.yml` roda em todo pull request: executa o `dotnet format` com as regras do `.editorconfig`, faz o commit da formatação na própria branch do PR e depois checa o resultado. Ele **não bloqueia o merge**: o que não puder ser corrigido automaticamente aparece como aviso.
+
+Quando o bot fizer esse commit, rode `git pull` antes de continuar na branch. Para formatar localmente antes de subir:
+
+```bash
+dotnet format
+```
+
 ### Segurança
 
 O workflow `.github/workflows/security.yml` roda em todo pull request, em push na `main`,

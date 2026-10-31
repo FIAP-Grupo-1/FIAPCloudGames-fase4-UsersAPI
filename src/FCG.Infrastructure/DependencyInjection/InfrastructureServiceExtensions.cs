@@ -120,7 +120,7 @@ public static class InfrastructureServiceExtensions
         private IServiceCollection AddRedis(IConfiguration configuration)
         {
             services.AddSingleton<IConnectionMultiplexer>(sp =>
-                ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")??""));
+                ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis") ?? ""));
 
             services.AddSingleton<ICacheService, RedisCacheService>();
             return services;
