@@ -186,3 +186,9 @@ que sobe um LocalStack (SNS + SQS) via Testcontainers para validar a publicaçã
 - Padrão Outbox para entrega garantida dos eventos;
 - Dockerfile de produção (multi-stage — já há um ponto de partida em `src/FCG.API/Dockerfile`);
 - Manifestos Kubernetes em `/k8s` (Deployment, Service, ConfigMap, Secret).
+
+## Deploy contínuo
+
+Todo merge na `main` publica a imagem `sha-<commit>` no ECR e atualiza o `users-api` no EKS por rolling
+update (`kubectl set image` + `rollout status`), sem derrubar o serviço. Com o cluster desligado, o deploy
+é pulado e a imagem entra no próximo `make workloads-deploy` do Orchestration.
