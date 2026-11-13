@@ -23,7 +23,7 @@ public class UserEventsPublishingTests(UsersApiFactory factory) : IClassFixture<
     public Task DisposeAsync() => Task.CompletedTask;
 
     private const string SeededAdminEmail = "admin@fcg.com";
-    private const string SeededAdminPassword = "Admin@123";
+    private const string SeededAdminPassword = UsersApiFactory.SeededAdminPassword;
 
     private static string UniqueEmail() => $"user-{Guid.NewGuid():N}@example.com";
 

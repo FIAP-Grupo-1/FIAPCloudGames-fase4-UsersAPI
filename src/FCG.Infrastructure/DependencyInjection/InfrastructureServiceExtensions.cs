@@ -88,7 +88,15 @@ public static class InfrastructureServiceExtensions
 
         private IServiceCollection AddJwtAuthentication(IConfiguration configuration)
         {
-            var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
+            var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
+
+            // A chave não fica no repositório: vem da variável JwtSettings__SecretKey
+            // (Secret fcg-secrets no Kubernetes, .env no docker compose ou user-secrets no dotnet run).
+            if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+                throw new InvalidOperationException(
+                    "JwtSettings:SecretKey não configurada. Defina a variável de ambiente JwtSettings__SecretKey " +
+                    "ou use 'dotnet user-secrets set \"JwtSettings:SecretKey\" <chave>' no projeto FCG.API.");
+
             services.AddSingleton(jwtSettings);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -39,11 +39,19 @@ jobs:
       - name: Construindo imagem Docker
         run: docker build -f src/FCG.API/Dockerfile -t fcg-users-api:ci .
 
+      - name: Gerando senhas descartáveis (nenhuma fica no repositório)
+        run: |
+          pg=$(openssl rand -hex 16); jwt=$(openssl rand -hex 32); adm="Adm-$(openssl rand -hex 12)"
+          echo "::add-mask::$pg"; echo "::add-mask::$jwt"; echo "::add-mask::$adm"
+          echo "PG_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "JWT_SECRET_KEY=$jwt" >> "$GITHUB_ENV"
+          echo "ADMIN_PASSWORD=$adm" >> "$GITHUB_ENV"
+
       - name: Subindo dependências (PostgreSQL e Redis)
         run: |
           docker network create fcg
           docker run -d --name db --network fcg \
-            -e POSTGRES_DB=fcgdb -e POSTGRES_USER=fcg -e POSTGRES_PASSWORD=fcg123 \
+            -e POSTGRES_DB=fcgdb -e POSTGRES_USER=fcg -e POSTGRES_PASSWORD="$PG_PASSWORD" \
             --health-cmd "pg_isready -U fcg -d fcgdb" --health-interval 2s --health-retries 30 \
             postgres:16-alpine
           docker run -d --name redis --network fcg redis:7-alpine
@@ -57,8 +65,10 @@ jobs:
       - name: Subindo a API
         run: |
           docker run -d --name api --network fcg -p 8080:8080 \
-            -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=fcgdb;Username=fcg;Password=fcg123" \
+            -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=fcgdb;Username=fcg;Password=$PG_PASSWORD" \
             -e ConnectionStrings__Redis="redis:6379,abortConnect=false" \
+            -e JwtSettings__SecretKey="$JWT_SECRET_KEY" \
+            -e Seed__AdminPassword="$ADMIN_PASSWORD" \
             fcg-users-api:ci
 
       - name: Smoke test (login do admin seed)
@@ -66,7 +76,7 @@ jobs:
           for i in $(seq 1 30); do
             status=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/auth/login \
               -H 'Content-Type: application/json' \
-              -d '{"email":"admin@fcg.com","password":"Admin@123"}' || true)
+              -d "{\"email\":\"admin@fcg.com\",\"password\":\"$ADMIN_PASSWORD\"}" || true)
             [ "$status" = "200" ] && echo "API respondeu 200" && exit 0
             sleep 2
           done
