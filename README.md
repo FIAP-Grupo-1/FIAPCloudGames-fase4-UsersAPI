@@ -40,9 +40,10 @@ tests/
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
-| `ConnectionStrings__DefaultConnection` | String de conexão do PostgreSQL | `Host=db;Port=5432;Database=fcgdb;Username=fcg;Password=fcg123` |
-| `ConnectionStrings__Redis` | String de conexão do Redis (cache) | `localhost:6379,user=user,password=pass,abortConnect=false` |
+| `ConnectionStrings__DefaultConnection` | String de conexão do PostgreSQL | `Host=db;Port=5432;Database=fcgdb;Username=fcg;Password=<senha>` |
+| `ConnectionStrings__Redis` | String de conexão do Redis (cache) | `localhost:6379,user=user,password=<senha>` |
 | `JwtSettings__SecretKey` | Chave secreta para assinar os tokens JWT | *(string com ≥ 32 caracteres)* |
+| `Seed__AdminPassword` | Senha do admin raiz criado no primeiro start (sem ela, o admin não é criado) | — |
 | `JwtSettings__ExpirationHours` | Validade do token, em horas | `4` |
 | `ASPNETCORE_ENVIRONMENT` | Ambiente (`Development` habilita o Swagger) | `Development` |
 | `Sns__TopicArn` | ARN do tópico SNS onde o `UserRegisteredEvent` é publicado | `arn:aws:sns:us-east-1:450753703903:fcg-user-events` |
@@ -51,6 +52,19 @@ tests/
 ## Executando localmente
 
 Suba o PostgreSQL e o Redis via Docker e rode a API localmente:
+
+Nenhuma senha fica no repositório: os `appsettings*.json` trazem só as chaves vazias. Antes do primeiro
+`dotnet run`, guarde os valores locais com o *user-secrets* (ficam no seu perfil, fora do repositório):
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=fcgdb;Username=fcg;Password=<senha>" --project src/FCG.API
+dotnet user-secrets set "ConnectionStrings:Redis" "localhost:6379,abortConnect=false" --project src/FCG.API
+dotnet user-secrets set "JwtSettings:SecretKey" "<chave com 32+ caracteres>" --project src/FCG.API
+dotnet user-secrets set "Seed:AdminPassword" "<senha do admin>" --project src/FCG.API
+```
+
+No Kubernetes os valores vêm do Secret `fcg-secrets` (no EKS, do AWS Secrets Manager via External Secrets) e no
+docker compose do Orchestration, do arquivo `.env`. Sem a `JwtSettings__SecretKey`, a API não sobe e avisa o motivo.
 
 ```bash
 docker compose up -d          # PostgreSQL + Redis
@@ -69,9 +83,9 @@ Swagger: `https://localhost:<porta>/swagger` (ambiente Development).
 
 ### Admin raiz (seed)
 
-| E-mail | Senha |
-|---|---|
-| `admin@fcg.com` | `Admin@123` |
+O admin raiz (`admin@fcg.com`) só é criado se a senha dele estiver em `Seed__AdminPassword` (user-secrets
+`Seed:AdminPassword` no `dotnet run`). No EKS ela é gerada pela AWS e fica no Secrets Manager (`fcg/eks/admin`);
+no Minikube e no docker compose, no `02-secret.yaml` / `.env` do Orchestration.
 
 ## Principais endpoints
 

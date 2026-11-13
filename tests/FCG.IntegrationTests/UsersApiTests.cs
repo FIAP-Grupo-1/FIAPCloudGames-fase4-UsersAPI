@@ -17,7 +17,7 @@ public class UsersApiTests(UsersApiFactory factory) : IClassFixture<UsersApiFact
     public Task DisposeAsync() => Task.CompletedTask;
 
     private const string SeededAdminEmail = "admin@fcg.com";
-    private const string SeededAdminPassword = "Admin@123";
+    private const string SeededAdminPassword = UsersApiFactory.SeededAdminPassword;
 
     // Espelha a serialização da API (enums como string) para desserializar as respostas.
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

@@ -24,6 +24,9 @@ namespace FCG.IntegrationTests;
 /// </summary>
 public class UsersApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <summary>Senha do admin raiz só para os testes (a real vem de Seed__AdminPassword).</summary>
+    public const string SeededAdminPassword = "Admin@123";
+
     private const string TopicName = "fcg-user-events-test";
     private const string QueueName = "fcg-user-events-test-queue";
 
@@ -44,6 +47,10 @@ public class UsersApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Chave descartável, só para os testes: a real não fica no repositório.
+        builder.UseSetting("JwtSettings:SecretKey", "chave-somente-para-testes-de-integracao-0123456789abcdef");
+        builder.UseSetting("Seed:AdminPassword", SeededAdminPassword);
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
