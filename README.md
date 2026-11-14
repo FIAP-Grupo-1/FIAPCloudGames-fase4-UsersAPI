@@ -123,6 +123,9 @@ O workflow `.github/workflows/test.yml` roda em todo pull request:
 - **container-test**: build da imagem Docker e smoke test (sobe PostgreSQL, Redis e a
   API, e valida o login do admin seed).
 
+Depois do merge, a entrega (testes → imagem no ECR → deploy no EKS) fica no `ecr-push.yml`: ver
+[Deploy contínuo](#deploy-contínuo).
+
 ### Lint
 
 O workflow `.github/workflows/lint.yml` roda em todo pull request: executa o `dotnet format` com as regras do `.editorconfig`, faz o commit da formatação na própria branch do PR e depois checa o resultado. Ele **não bloqueia o merge**: o que não puder ser corrigido automaticamente aparece como aviso.
@@ -192,3 +195,25 @@ que sobe um LocalStack (SNS + SQS) via Testcontainers para validar a publicaçã
 Todo merge na `main` publica a imagem `sha-<commit>` no ECR e atualiza o `users-api` no EKS por rolling
 update (`kubectl set image` + `rollout status`), sem derrubar o serviço. Com o cluster desligado, o deploy
 é pulado e a imagem entra no próximo `make workloads-deploy` do Orchestration.
+
+O workflow é o `.github/workflows/ecr-push.yml`:
+
+| Job | Quando roda | O que faz |
+|---|---|---|
+| `Build (PR)` | pull request | só builda a imagem, sem tocar na AWS |
+| `Build e testes unitários` | push na `main` ou tag `v*` | restore, build em Release e `FCG.UnitTests`. Se falhar, nada é publicado |
+| `Build e push no ECR` | depois dos testes | publica `fcg/users-api:sha-<commit>` (na `main`) ou `fcg/users-api:v*` (na tag) |
+| `Deploy no EKS` | depois do push | `kubectl set image` no deployment `users-api` do namespace `fcg` e espera o `rollout status` (até 5 min) |
+
+- **Tags:** `sha-*` expira em 15 dias pela lifecycle do ECR; `v*` nunca expira. Para uma release:
+  `git tag v1.2.3 && git push origin v1.2.3`. As tags do ECR são imutáveis, então uma tag já publicada não é
+  sobrescrita (o push é pulado e o deploy usa a imagem existente).
+- **Zero downtime:** o deployment usa `RollingUpdate` com `maxUnavailable: 0`. O pod novo só recebe tráfego
+  depois da readiness probe; se ele não ficar pronto, os antigos continuam atendendo e o job falha.
+- **Cluster desligado:** o job avisa (*"Cluster fcg desligado; deploy pulado"*) e termina verde, para a
+  `main` não ficar vermelha enquanto o cluster efêmero está desligado.
+- **Credenciais:** OIDC com a role `fcg-gha-users-api` (variável de repositório `AWS_ROLE_ARN`), sem access
+  key no GitHub. A role publica só no `fcg/users-api` e, no cluster, edita só o namespace `fcg`
+  (`github-oidc.yaml` e `eks.yaml` do Orchestration).
+- **Refazer um deploy sem mudar código:** na aba Actions, abra a execução do `ecr-push` do commit desejado e
+  use *Re-run all jobs*.
