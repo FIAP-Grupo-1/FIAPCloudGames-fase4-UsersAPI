@@ -168,7 +168,7 @@ No cadastro de usuário a API publica o evento em um tópico SNS, usando
 `AWSSDK.SimpleNotificationService` diretamente (`SnsIntegrationEventPublisher`). Os
 contratos vêm do pacote `FiapCloudGames.Contracts`, compartilhado entre os
 microsserviços. O consumidor é a função Lambda do repositório
-`FIAPCloudGames-fase3-NotificationsAPI` (SNS → SQS → Lambda → DynamoDB).
+`FIAPCloudGames-fase4-NotificationsAPI` (SNS → SQS → Lambda → DynamoDB).
 
 | Gatilho | Evento | Tópico SNS |
 |---|---|---|
