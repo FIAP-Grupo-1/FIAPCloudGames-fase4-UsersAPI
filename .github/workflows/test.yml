@@ -10,10 +10,10 @@ jobs:
     # PostgreSQL, Redis e LocalStack (SNS/SQS) são criados pelos próprios testes via
     # Testcontainers (o runner já tem Docker).
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurando .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Construindo imagem Docker
         run: docker build -f src/FCG.API/Dockerfile -t fcg-users-api:ci .
